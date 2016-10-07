@@ -1,0 +1,16 @@
+== Soutěže pro malé děti
+
+Aplikace k využití v rámci výročí naší školy sestává z...
+
+Test představivosti::
+žákovi jsou předkládány sítě, které připomínají rozložené krychle s očíslovanými stranami. Žák musí rozhodnout, jestli jde skutečně o krychli a pokud ano, jestli je správně očíslovaná (konstatní součet protilehlých stran). Rozhoduje kolik otázek bude schopen odpovědět za určitý předem daný čas. Každá špatná odpověď sráží počet správných odpovědí o určité procento
+
+Hra matematico::
+připomíná karetní hru poker v mřížce http://matematico.cz, žák v časové tísni rozmisťuje čísla, která jsou mu programem předkládána. Jeho výsledek určuje počet dosažených dvojic, trojic, postupek... v řádkách/sloupcích a hlavních diagonálách.
+
+Redis::
+http://redis.io 
+Tuto síťovou cache používáme pro komunikaci během hry. Klientské aplikace žáků odesílají ve svých klíčích údaje o svém hráči, jeho dosaženém počtu bodů... v jedné i druhé hře. Učitelský počítač na projektoru zobrazuje průběžný stav (hodnocení a pořadí několika nejlepších hráčů) Vzhledem k tomu, že soutěž probíhá ve dvou třídách současně - vyhodnocuje se i vzájemná skupinová úspěšnost. Příslušnost k dané třídě je rozeznána pomocí hostname.
+
+__Celý systém má být nasazen do 12.10.2016, takže máme ještě co ladit a doplňovat__
+
