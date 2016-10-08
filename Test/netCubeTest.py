@@ -1,33 +1,46 @@
 #!/usr/bin/python3
 import netComb
 from tkinter import *
-from PIL import Image
-import sys
+#from PIL import Image
 import os
 import random
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'RedisManaging'))
+from redisClient import RedisClient
 
 size_pictures = (150, 137)
 gap = 5
+
 
 class ShowDialog:
     def __init__(self, frm):
         self.form = frm
         self.choice = IntVar()
+        self.txt_info = StringVar()
+        self.info = Label(self.form, textvariable=self.txt_info,
+                          justify = LEFT, padx=20, font=("Serif", "20")) \
+            .grid(row=0, columnspan=2, sticky=W+E+N, pady=40)
 
 
     def create_dialog(self, correct_answer):
         self.choice.set(1)
-        self.info = Label(self.form, text="Správně "+str(0),
-                          justify = LEFT, padx=20, font=("Serif", "20"))\
-            .grid(row=0, columnspan=2, sticky=W+E+N, pady=40)
-        Label(self.form, text="Znáš správnou odpověď?", justify = LEFT,
-              padx=20, font=("Serif","20")).grid(row=1, columnspan=2, sticky=W+E+N, pady=40)
+        self.txt_info = "Správně "+str(0)
+        Label(self.form, text="Znáš správnou odpověď?", justify=LEFT,
+              padx=20, font=("Serif", "20")).grid(row=1, columnspan=2, sticky=W+E+N, pady=40)
         Radiobutton(self.form, text="Je to síť krychle a všechny protilehlé strany dávají součet 7",
                     padx = 20, variable=self.choice, value=1, font=("Serif","10")).grid(row=2, columnspan=2,  sticky=W)
         Radiobutton(self.form, text="Je to síť krychle ale některé protilehlé strany dávají jiný součet",
                     padx = 20, variable=self.choice, value=2, font=("Serif","10")).grid(row=3, columnspan=2, sticky=W)
         Radiobutton(self.form, text="Tohle není žádná krychle ale jen náhodný shluk čtverečků!",
                     padx = 20, variable=self.choice, value=3, font=("Serif","10")).grid(row=4, columnspan=2, sticky=W)
+
+    def set_info(self, txt):
+        print(txt)
+        if self.info is not None:
+            self.txt_info = txt
+            self.info.set(self.txt_info)
+
 
 
 class ShowNet:
@@ -101,14 +114,19 @@ class ShowNet:
 
 class GeometrieTest:
     def __init__(self, master):
+        # redis
+        self.communication = RedisClient('localhost', None, 6379)
+        self.communication.add_myself()
+        # self.communication.send_data("Test", "Spusteny!")
+        # tkinter
         self.frameL = Frame(master)
         self.frameL.pack(padx=20, pady=20, side=LEFT)
         self.frameR = Frame(master)
         self.frameR.pack(padx=5, pady=10, side=LEFT)
         self.dialog = ShowDialog(self.frameR)
-        self.next_button = Button(self.frameR, text="Další", font=("Serif","10"), command=self.click_next)
+        self.next_button = Button(self.frameR, text="Další", font=("Serif", "10"), command=self.click_next)
         self.next_button.grid(row=5, column=0, pady=20)
-        self.button = Button(self.frameR, text="QUIT", fg="red", font=("Serif","10"), command=self.frameR.quit)
+        self.button = Button(self.frameR, text="QUIT", fg="red", font=("Serif", "10"), command=self.frameR.quit)
         self.button.grid(row=5, column=1, pady=20)
         self.sh = self.create_net_place()
         self.count = 0
@@ -127,9 +145,8 @@ class GeometrieTest:
         category = random.randint(1, 3)
         self.sh.create_problem(category)
         self.dialog.create_dialog(category)
-        if self.dialog.choice == category:
-            self.dialog.info.config(text="Spr odpovědí: {s}".format(s=self.count), width=100)
-            self.dialog.info.update_idletasks()
+        #if self.dialog.choice == category:
+        self.dialog.set_info("Spr odpovědí: {s} {i}".format(s=category, i=self.dialog.choice))
 
 
 

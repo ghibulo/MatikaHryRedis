@@ -2,6 +2,7 @@
 from tkinter import Tk, Canvas
 from random import randint
 
+
 ODPOCET = 5
 zbyva = 25
 cisla = []
