@@ -17,15 +17,11 @@ class ShowDialog:
     def __init__(self, frm):
         self.form = frm
         self.choice = IntVar()
-        self.txt_info = StringVar()
-        self.info = Label(self.form, textvariable=self.txt_info,
-                          justify = LEFT, padx=20, font=("Serif", "20")) \
-            .grid(row=0, columnspan=2, sticky=W+E+N, pady=40)
-
-
-    def create_dialog(self, correct_answer):
         self.choice.set(1)
-        self.txt_info = "Správně "+str(0)
+        self.create_dialog()
+
+
+    def create_dialog(self):
         Label(self.form, text="Znáš správnou odpověď?", justify=LEFT,
               padx=20, font=("Serif", "20")).grid(row=1, columnspan=2, sticky=W+E+N, pady=40)
         Radiobutton(self.form, text="Je to síť krychle a všechny protilehlé strany dávají součet 7",
@@ -35,12 +31,53 @@ class ShowDialog:
         Radiobutton(self.form, text="Tohle není žádná krychle ale jen náhodný shluk čtverečků!",
                     padx = 20, variable=self.choice, value=3, font=("Serif","10")).grid(row=4, columnspan=2, sticky=W)
 
-    def set_info(self, txt):
-        print(txt)
-        if self.info is not None:
-            self.txt_info = txt
-            self.info.set(self.txt_info)
 
+
+class PanelInfo:
+
+    def __init__(self, root_form, main_cl):
+        """
+        :param canvas: where to draw info
+        """
+        self.root_form = root_form
+        self.main_cl = main_cl
+        h=300
+        self.canvas = Canvas(root_form, width=300, height=h)
+        self.canvas.grid(row=0, columnspan=2, sticky=W+E+N, pady=40)
+        self.n_right_answer = [0, "Správných odpovědí: {n}",
+                               self.canvas.create_text(300 / 2, h / 4, text="")]
+        self.update_text(self.n_right_answer)
+        self.n_wrong_answer = [0, "Chybných odpovědí: {n}",
+                               self.canvas.create_text(300 / 2, 2*h / 4, text="")]
+        self.update_text(self.n_wrong_answer)
+        self.time_bar = [200]
+        self.time_bar.append(self.canvas.create_rectangle(50, 3*h/4,self.time_bar[0]+50,3*200/2+30,fill="black"))
+        self.canvas.after(100,self.update_time_bar)
+
+
+    def update_time_bar(self):
+        self.time_bar[0] -= 2
+        self.canvas.coords(self.time_bar[1],50, 3*300/4,self.time_bar[0]+50,3*200/2+30)
+        print("cas {t}".format(t=self.time_bar[0]))
+        if self.time_bar[0] > 0:
+            self.canvas.after(100,self.update_time_bar)
+        else:
+            self.canvas.create_text(50,30, text="Konec testu!")
+            self.main_cl.n_attempt['state'] = 'normal'
+
+
+    def update_text(self, txt):
+        self.canvas.itemconfigure(txt[2], text=txt[1].format(n=txt[0]))
+
+    def add_ra(self):
+        """increase number of right answers"""
+        self.n_right_answer[0] += 1
+        self.update_text(self.n_right_answer)
+
+    def add_wa(self):
+        """increase number of wrong answers"""
+        self.n_wrong_answer[0] += 1
+        self.update_text(self.n_wrong_answer)
 
 
 class ShowNet:
@@ -111,26 +148,64 @@ class ShowNet:
         self.show(problem)
 
 
+class Identity:
+
+    def __init__(self, parent):
+        wind = self.top = Toplevel(parent)
+        wind.focus_set()
+        wind.attributes("-topmost", True)
+        wind.title("Identifikace")
+        wind.geometry('%dx%d+%d+%d' % (400, 150, 100, 200))
+        self.myLabel = Label(wind, text='Jméno:')
+        self.myLabel.pack()
+        self.EntryN = Entry(wind)
+        self.EntryN.pack()
+        self.myLabel = Label(wind, text='Přijímení:')
+        self.myLabel.pack()
+        self.EntryS = Entry(wind)
+        self.EntryS.pack()
+        self.SubmitButton = Button(wind, text='Začneme?', command=self.send)
+        self.SubmitButton.pack()
+
+    def send(self):
+        self.name = self.EntryN.get()
+        self.surname = self.EntryS.get()
+        self.top.destroy()
+
 
 class GeometrieTest:
+
     def __init__(self, master):
+        # hide main window
+        master.withdraw()
+        input_name = Identity(master)
+        master.wait_window(input_name.top)
+        print('Name: ', input_name.name)
+        print('Surname: ', input_name.surname)
+        self.name = (input_name.name, input_name.surname)
+        # unhide again
+        master.title("Testík")
+        master.deiconify()
+
         # redis
         self.communication = RedisClient('localhost', None, 6379)
         self.communication.add_myself()
-        # self.communication.send_data("Test", "Spusteny!")
+        self.communication.send_data("jmeno", self.name)
         # tkinter
         self.frameL = Frame(master)
         self.frameL.pack(padx=20, pady=20, side=LEFT)
         self.frameR = Frame(master)
         self.frameR.pack(padx=5, pady=10, side=LEFT)
+        self.info = PanelInfo(self.frameR, self)
         self.dialog = ShowDialog(self.frameR)
         self.next_button = Button(self.frameR, text="Další", font=("Serif", "10"), command=self.click_next)
         self.next_button.grid(row=5, column=0, pady=20)
-        self.button = Button(self.frameR, text="QUIT", fg="red", font=("Serif", "10"), command=self.frameR.quit)
-        self.button.grid(row=5, column=1, pady=20)
+        self.n_attempt = Button(self.frameR, text="Další pokus?", fg="red",
+                                state=DISABLED, font=("Serif", "10"), command=self.frameR.quit)
+        self.n_attempt.grid(row=5, column=1, pady=20)
         self.sh = self.create_net_place()
-        self.count = 0
-        self.click_next()
+        self.category = -1
+        self.get_question()
 
     def create_net_place(self):
         canvas_width = 700
@@ -140,17 +215,23 @@ class GeometrieTest:
         sh = ShowNet(canvas, netComb.res_cubes, netComb.res_nocubes)
         return sh
 
+    def get_question(self):
+        self.category = random.randint(1, 3)
+        self.sh.create_problem(self.category)
 
     def click_next(self):
-        category = random.randint(1, 3)
-        self.sh.create_problem(category)
-        self.dialog.create_dialog(category)
-        #if self.dialog.choice == category:
-        self.dialog.set_info("Spr odpovědí: {s} {i}".format(s=category, i=self.dialog.choice))
+        #self.dialog.create_dialog(category)
+        print("choice = {c}, category = {k}".format(c=self.dialog.choice.get(), k=self.category))
+        if self.dialog.choice.get() == self.category:
+            self.info.add_ra()
+        else:
+            self.info.add_wa()
+        self.get_question()
 
-
-
-
+    def get_new_attempt(self):
+        self.n_attempt['state']=DISABLED
+        self.info = PanelInfo(self.frameR, self)
+        self.get_question()
 
 
 
