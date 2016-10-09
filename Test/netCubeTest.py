@@ -15,7 +15,6 @@ gap = 5
 redis_parameters = {'local': ('localhost', None),
                     'skola': ('192.168.4.141', 'linux')}
 
-
 class ShowDialog:
     def __init__(self, frm):
         self.form = frm
@@ -55,7 +54,7 @@ class PanelInfo:
         self.update_text(self.n_wrong_answer)
         self.time_bar = [200]
         self.time_bar.append(self.canvas.create_rectangle(50, 3*h/4,self.time_bar[0]+50,3*200/2+30,fill="black"))
-        self.canvas.after(100,self.update_time_bar)
+        self.canvas.after(1000, self.update_time_bar)
 
 
     def update_time_bar(self):
@@ -63,10 +62,11 @@ class PanelInfo:
         self.canvas.coords(self.time_bar[1],50, 3*300/4,self.time_bar[0]+50,3*200/2+30)
         print("cas {t}".format(t=self.time_bar[0]))
         if self.time_bar[0] > 0:
-            self.canvas.after(100,self.update_time_bar)
+            self.canvas.after(1000, self.update_time_bar)
         else:
             self.canvas.create_text(50,30, text="Konec testu!")
             self.main_cl.n_attempt['state'] = 'normal'
+            self.main_cl.next_button['state'] = DISABLED
             GeometrieTest.communication.add_data("vykonyKrychle", (self.n_right_answer[0], self.n_wrong_answer[0]))
 
 
@@ -183,7 +183,7 @@ class GeometrieTest:
         self.next_button = Button(self.frameR, text="Další", font=("Serif", "10"), command=self.click_next)
         self.next_button.grid(row=5, column=0, pady=20)
         self.n_attempt = Button(self.frameR, text="Další pokus?", fg="red",
-                                state=DISABLED, font=("Serif", "10"), command=self.frameR.quit)
+                                state=DISABLED, font=("Serif", "10"), command=self.get_new_attempt)
         self.n_attempt.grid(row=5, column=1, pady=20)
         self.sh = self.create_net_place()
         self.category = -1
@@ -211,9 +211,11 @@ class GeometrieTest:
         self.get_question()
 
     def get_new_attempt(self):
-        self.n_attempt['state']=DISABLED
-        self.info = PanelInfo(self.frameR, self)
-        self.get_question()
+        if hasattr(self, 'n_attempt') and  self.n_attempt['state'] != DISABLED:
+            self.n_attempt['state']=DISABLED
+            self.next_button['state']='normal'
+            self.info = PanelInfo(self.frameR, self)
+            self.get_question()
 
 
 

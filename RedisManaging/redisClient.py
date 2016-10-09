@@ -28,7 +28,13 @@ class RedisClient:
         if self.client_key not in iplist:
             iplist.append(self.client_key)
             self.redis.setex("iplist", 60*60, json.dumps(iplist))
-        
+
+    def am_I_added(self):
+        s = self.redis.get("iplist")
+        ips = "[]" if s is None else s.decode("utf-8")
+        iplist = json.loads(ips)
+        return self.client_key in iplist
+
     def send_data(self, akey, aval):
         """
         :param akey: klic, pod ktery chce  klient zapisovat
@@ -85,13 +91,25 @@ class Identity:
         wind.geometry('%dx%d+%d+%d' % (400, 150, 100, 200))
         self.redis_cli = redis_client
         self.redis_ok = True
+        self.name, self.surname = None, None
         self.myLabel = Label(wind, text='Jméno:')
         self.myLabel.pack()
         self.EntryN = Entry(wind)
+        try:
+            if redis_client.am_I_added():
+                nm = redis_client.get_data("jmeno")
+                self.redis_ok = True
+                if nm is not None:
+                    self.name, self.surname = nm
+                    self.EntryN.insert(END, self.name)
+        except:
+            self.redis_ok = False
         self.EntryN.pack()
         self.myLabel = Label(wind, text='Přijímení:')
         self.myLabel.pack()
         self.EntryS = Entry(wind)
+        if self.surname is not None:
+            self.EntryS.insert(END, self.surname)
         self.EntryS.pack()
         self.SubmitButton = Button(wind, text='Začneme?', command=self.send)
         self.SubmitButton.pack()
