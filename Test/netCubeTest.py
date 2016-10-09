@@ -7,10 +7,13 @@ import random
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'RedisManaging'))
-from redisClient import RedisClient
+from redisClient import RedisClient, Identity
 
 size_pictures = (150, 137)
 gap = 5
+
+redis_parameters = {'local': ('localhost', None),
+                    'skola': ('192.168.4.141', 'linux')}
 
 
 class ShowDialog:
@@ -64,6 +67,7 @@ class PanelInfo:
         else:
             self.canvas.create_text(50,30, text="Konec testu!")
             self.main_cl.n_attempt['state'] = 'normal'
+            GeometrieTest.communication.add_data("vykonyKrychle", (self.n_right_answer[0], self.n_wrong_answer[0]))
 
 
     def update_text(self, txt):
@@ -148,49 +152,27 @@ class ShowNet:
         self.show(problem)
 
 
-class Identity:
-
-    def __init__(self, parent):
-        wind = self.top = Toplevel(parent)
-        wind.focus_set()
-        wind.attributes("-topmost", True)
-        wind.title("Identifikace")
-        wind.geometry('%dx%d+%d+%d' % (400, 150, 100, 200))
-        self.myLabel = Label(wind, text='Jméno:')
-        self.myLabel.pack()
-        self.EntryN = Entry(wind)
-        self.EntryN.pack()
-        self.myLabel = Label(wind, text='Přijímení:')
-        self.myLabel.pack()
-        self.EntryS = Entry(wind)
-        self.EntryS.pack()
-        self.SubmitButton = Button(wind, text='Začneme?', command=self.send)
-        self.SubmitButton.pack()
-
-    def send(self):
-        self.name = self.EntryN.get()
-        self.surname = self.EntryS.get()
-        self.top.destroy()
-
 
 class GeometrieTest:
 
+    try:
+        global redis_parameters
+        communication = RedisClient(*redis_parameters['local'])
+    except:
+        pass
+
     def __init__(self, master):
-        # hide main window
-        master.withdraw()
-        input_name = Identity(master)
+
+        master.title("Testík")
+        # redis
+
+        input_name = Identity(master, GeometrieTest.communication)
         master.wait_window(input_name.top)
+        # kontrolni tisk
         print('Name: ', input_name.name)
         print('Surname: ', input_name.surname)
         self.name = (input_name.name, input_name.surname)
-        # unhide again
-        master.title("Testík")
-        master.deiconify()
 
-        # redis
-        self.communication = RedisClient('localhost', None, 6379)
-        self.communication.add_myself()
-        self.communication.send_data("jmeno", self.name)
         # tkinter
         self.frameL = Frame(master)
         self.frameL.pack(padx=20, pady=20, side=LEFT)

@@ -1,6 +1,7 @@
 from redis import StrictRedis
 import socket
 import json
+from tkinter import *
 
 
 exp_time = 60*60
@@ -29,10 +30,83 @@ class RedisClient:
             self.redis.setex("iplist", 60*60, json.dumps(iplist))
         
     def send_data(self, akey, aval):
+        """
+        :param akey: klic, pod ktery chce  klient zapisovat
+        :param aval: hodnota, ktera nahradi puvodni hodnotu
+        :return:
+        """
         my_values = self.redis.get(self.client_key)
         self.client_values = {} if my_values is None else json.loads(my_values.decode('utf-8'))
         self.client_values[akey] = aval
         self.redis.setex(self.client_key, exp_time, json.dumps(self.client_values))
+
+
+    def get_data(self, akey):
+        """
+        :param akey: klic jehoz data klient potrebuje
+        :return: kdyz klic existuje, vrati hodnotu, jinak None
+        """
+        my_values = self.redis.get(self.client_key)
+        self.client_values = {} if my_values is None else json.loads(my_values.decode('utf-8'))
+        return self.client_values.get(akey, None)
+
+
+    def add_data(self, akey, aval):
+        """
+        :param akey: klic, pod ktery chce  klient zapisovat
+        :param aval: hodnota, ktera se prida k puvodnim hodnotam ulozenym v 'list'
+        :return:
+        """
+        d = self.get_data(akey)
+        if d is None:
+            vykony = []
+        else:
+            vykony = d
+        vykony.append(aval)
+        self.send_data(akey, vykony)
+
+
+
+class Identity:
+    """
+    - Zepta se na jmeno
+    - zapise svuj klic do seznamu 'iplist'
+    - zapise sve jmeno do hodnot pod svym klicem
+    """
+    def __init__(self, parent, redis_client):
+        # hide main window
+        self.parent = parent
+        parent.withdraw()
+
+        wind = self.top = Toplevel(parent)
+        wind.focus_set()
+        wind.attributes("-topmost", True)
+        wind.title("Identifikace")
+        wind.geometry('%dx%d+%d+%d' % (400, 150, 100, 200))
+        self.redis_cli = redis_client
+        self.redis_ok = True
+        self.myLabel = Label(wind, text='Jméno:')
+        self.myLabel.pack()
+        self.EntryN = Entry(wind)
+        self.EntryN.pack()
+        self.myLabel = Label(wind, text='Přijímení:')
+        self.myLabel.pack()
+        self.EntryS = Entry(wind)
+        self.EntryS.pack()
+        self.SubmitButton = Button(wind, text='Začneme?', command=self.send)
+        self.SubmitButton.pack()
+
+    def send(self):
+        self.name = self.EntryN.get()
+        self.surname = self.EntryS.get()
+        try:
+            self.redis_cli.add_myself()
+            self.redis_cli.send_data("jmeno", [self.name, self.surname])
+        except:
+            self.redis_ok = False
+        self.top.destroy()
+        # unhide parent again
+        self.parent.deiconify()
 
 
 
