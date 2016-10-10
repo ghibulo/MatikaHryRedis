@@ -6,11 +6,17 @@ from tkinter import *
 
 exp_time = 60*60
 
+indRed = 'skola'
+redis_parameters = {'local': ('localhost', None),
+                    'skola': ('192.168.4.141', 'linux')}
+
 #redis = StrictRedis(host='192.168.4.141',  port=6379, password='linux', db=0)
 
 
 #redis.setex("comp1", exp_time, '{"app": "test", "name": "Michal Voráček", "score":50}')
 #redis.setex("comp1", exp_time, 'nejhorší operační systém')
+
+
 
 class RedisClient:
     def __init__(self, ahost, apassw, aport=6379):
@@ -79,7 +85,18 @@ class Identity:
     - zapise svuj klic do seznamu 'iplist'
     - zapise sve jmeno do hodnot pod svym klicem
     """
-    def __init__(self, parent, redis_client):
+    def __init__(self, parent):
+        # user closed window
+        self.closed_window = True
+        # get redis
+        self.redis_ok = True
+        try:
+            global redis_parameters
+            self.redis = RedisClient(*redis_parameters[indRed])
+        except:
+            self.redis_ok = False
+
+
         # hide main window
         self.parent = parent
         parent.withdraw()
@@ -89,15 +106,13 @@ class Identity:
         wind.attributes("-topmost", True)
         wind.title("Identifikace")
         wind.geometry('%dx%d+%d+%d' % (400, 150, 100, 200))
-        self.redis_cli = redis_client
-        self.redis_ok = True
         self.name, self.surname = None, None
         self.myLabel = Label(wind, text='Jméno:')
         self.myLabel.pack()
         self.EntryN = Entry(wind)
         try:
-            if redis_client.am_I_added():
-                nm = redis_client.get_data("jmeno")
+            if self.redis.am_I_added():
+                nm = self.redis.get_data("jmeno")
                 self.redis_ok = True
                 if nm is not None:
                     self.name, self.surname = nm
@@ -118,10 +133,12 @@ class Identity:
         self.name = self.EntryN.get()
         self.surname = self.EntryS.get()
         try:
-            self.redis_cli.add_myself()
-            self.redis_cli.send_data("jmeno", [self.name, self.surname])
+            self.redis.add_myself()
+            self.redis.send_data("jmeno", [self.name, self.surname])
+            self.redis.send_data("hostname", socket.gethostname())
         except:
             self.redis_ok = False
+        self.closed_window = False
         self.top.destroy()
         # unhide parent again
         self.parent.deiconify()
