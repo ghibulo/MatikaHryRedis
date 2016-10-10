@@ -12,8 +12,6 @@ from redisClient import RedisClient, Identity
 size_pictures = (150, 137)
 gap = 5
 
-redis_parameters = {'local': ('localhost', None),
-                    'skola': ('192.168.4.141', 'linux')}
 
 class ShowDialog:
     def __init__(self, frm):
@@ -54,7 +52,7 @@ class PanelInfo:
         self.update_text(self.n_wrong_answer)
         self.time_bar = [200]
         self.time_bar.append(self.canvas.create_rectangle(50, 3*h/4,self.time_bar[0]+50,3*200/2+30,fill="black"))
-        self.canvas.after(1000, self.update_time_bar)
+        self.canvas.after(100, self.update_time_bar)
 
 
     def update_time_bar(self):
@@ -62,12 +60,12 @@ class PanelInfo:
         self.canvas.coords(self.time_bar[1],50, 3*300/4,self.time_bar[0]+50,3*200/2+30)
         print("cas {t}".format(t=self.time_bar[0]))
         if self.time_bar[0] > 0:
-            self.canvas.after(1000, self.update_time_bar)
+            self.canvas.after(100, self.update_time_bar)
         else:
             self.canvas.create_text(50,30, text="Konec testu!")
             self.main_cl.n_attempt['state'] = 'normal'
             self.main_cl.next_button['state'] = DISABLED
-            GeometrieTest.communication.add_data("vykonyKrychle", (self.n_right_answer[0], self.n_wrong_answer[0]))
+            GeometrieTest.communication.add_data("krychle", self.n_right_answer[0]*pow(0.5,self.n_wrong_answer[0]))
 
 
     def update_text(self, txt):
@@ -155,23 +153,24 @@ class ShowNet:
 
 class GeometrieTest:
 
-    try:
-        global redis_parameters
-        communication = RedisClient(*redis_parameters['local'])
-    except:
-        pass
+
+
 
     def __init__(self, master):
 
         master.title("Testík")
         # redis
 
-        input_name = Identity(master, GeometrieTest.communication)
-        master.wait_window(input_name.top)
+        login_data = Identity(master)
+        GeometrieTest.communication = login_data.redis
+        master.wait_window(login_data.top)
+        if not login_data.redis_ok or login_data.closed_window:
+            sys.exit("Nefunkcni REDIS!")
+
         # kontrolni tisk
-        print('Name: ', input_name.name)
-        print('Surname: ', input_name.surname)
-        self.name = (input_name.name, input_name.surname)
+        print('Name: ', login_data.name)
+        print('Surname: ', login_data.surname)
+        self.name = (login_data.name, login_data.surname)
 
         # tkinter
         self.frameL = Frame(master)

@@ -2,6 +2,10 @@
 from tkinter import Tk, Canvas
 from random import randint
 from json import loads
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'RedisManaging'))
+from redisClient import RedisClient, Identity
+
 
 ODPOCET = 1
 body = 0
@@ -114,7 +118,7 @@ def naboduj(ab):
                  
 
 def vyhodnot():
-    global konec,body,infoBody
+    global konec,body,infoBody, redis
     konec = True
     body = 0
     for i in range(5):
@@ -131,6 +135,7 @@ def vyhodnot():
     infoBody.append(c.create_text(490,10,text=str(b),fill="green"))
     body+=b
     c.itemconfig(aktivniCislo,text="0",fill="red")
+    redis.add_data("matematico", body)
     naboduj(0)
     
     
@@ -185,6 +190,12 @@ def novaHra():
     
 
 o = Tk()
+login_data = Identity(o)
+redis = login_data.redis
+o.wait_window(login_data.top)
+if not login_data.redis_ok  or login_data.closed_window:
+    sys.exit("Nefunkcni REDIS!")
+
 c = Canvas(o,width=700,height=500);
 c.pack()
 ctverce = []
