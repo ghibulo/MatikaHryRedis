@@ -2,6 +2,10 @@
 from tkinter import Tk, Canvas
 from random import randint
 from json import loads
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'RedisManaging'))
+from redisClient import RedisClient, Identity
+
 
 ODPOCET = 1
 body = 0
@@ -131,6 +135,7 @@ def vyhodnot():
     infoBody.append(c.create_text(490,10,text=str(b),fill="green"))
     body+=b
     c.itemconfig(aktivniCislo,text="0",fill="red")
+    #ODESLAT BODY body
     naboduj(0)
     
     
@@ -182,7 +187,10 @@ def novaHra():
     c.itemconfig(aktivniCislo,text=str(cislo))
     c.itemconfig(aktivniCislo,fill="black")
     c.after(100,upravCaru)
-    
+
+
+#Přihlásit se
+
 
 o = Tk()
 c = Canvas(o,width=700,height=500);
