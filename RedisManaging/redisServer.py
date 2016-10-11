@@ -1,14 +1,17 @@
+#!/usr/bin/python3
 from redis import StrictRedis
 from json import dumps, loads
 from tkinter import Tk, Frame, Label
 from random import randint
+from redisClient import Gl
 
 h1 = ("Arial",20)
 h2 = ("Arial",15)
 
-redis = StrictRedis(host='192.168.4.141',  port=6379, password='linux', db=0)
+#redis = StrictRedis(host='192.168.4.141',  port=6379, password='linux', db=0)
 
 #redis = StrictRedis(host='localhost',  port=6379, db=0)
+redis = Gl.getRedisLog()
 exp_time = 60*60
 
 class Session:
@@ -90,10 +93,14 @@ class App:
         for i in range(5):
             if i<len(zaci):
                 self.pLabel[i].config(text=str(i+1)+". "+zaci[i][0]+"("+str(round(zaci[i][1],2))+")")
-                
-        self.pu1.config(text = "PU1: "+str(round(sum(pu1)/len(pu1))))
-        self.pu2.config(text = "PU2: "+str(round(sum(pu2)/len(pu2))))
-                
+
+        try:
+            self.pu1.config(text = "PU1: "+str(round(sum(pu1)/len(pu1))))
+            self.pu2.config(text = "PU2: "+str(round(sum(pu2)/len(pu2))))
+        except:
+            self.pu1.config(text = "PU1: -")
+            self.pu2.config(text = "PU2: -")
+
             
         
     def update(self):
@@ -131,7 +138,7 @@ class Prezenter:
             app.update()
         self.o.after(5000, self.news)
     
-s = Session(redis, False)
+s = Session(redis, True)
 
 o = Prezenter([["Je to krychle?","krychle"],["Matematico","matematico"]])
 

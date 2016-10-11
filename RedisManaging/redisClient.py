@@ -4,11 +4,20 @@ import json
 from tkinter import *
 
 
-exp_time = 60*60
+class Gl:
+    exp_time = 60*60
+    indRed = 'b307'
+    redis_parameters = {'local': ('localhost', None),
+                        'skola': ('192.168.4.141', 'linux'),
+                        'b307': ('192.168.3.137', 'linux')}
+    @staticmethod
+    def getRedisLog(key=indRed):
+        pas = Gl.redis_parameters[key][1] 
+        if  pas is None:
+            return StrictRedis(host=Gl.redis_parameters[key][0], port=6379)
+        else:
+            return StrictRedis(host=Gl.redis_parameters[key][0], port=6379, password=pas)
 
-indRed = 'skola'
-redis_parameters = {'local': ('localhost', None),
-                    'skola': ('192.168.4.141', 'linux')}
 
 #redis = StrictRedis(host='192.168.4.141',  port=6379, password='linux', db=0)
 
@@ -145,12 +154,6 @@ class Identity:
 
 
 
-
-#rc = RedisClient('192.168.4.141', 'linux', 6379 )
-if __name__ == "__main__":
-    rc = RedisClient('localhost', None, 6379)
-    rc.add_myself()
-    rc.send_data("skore", 50)
 
 
 
