@@ -14,22 +14,44 @@ gap = 5
 
 
 class ShowDialog:
-    def __init__(self, frm):
-        self.form = frm
-        self.choice = IntVar()
-        self.choice.set(1)
+    def __init__(self, parent):
+        self.parent = parent
+        self.form = parent.frameR
         self.create_dialog()
 
 
     def create_dialog(self):
         Label(self.form, text="Znáš správnou odpověď?", justify=LEFT,
               padx=20, font=("Serif", "20")).grid(row=1, columnspan=2, sticky=W+E+N, pady=40)
-        Radiobutton(self.form, text="Je to síť krychle a všechny protilehlé strany dávají součet 7",
-                    padx = 20, variable=self.choice, value=1, font=("Serif","10")).grid(row=2, columnspan=2,  sticky=W)
-        Radiobutton(self.form, text="Je to síť krychle ale některé protilehlé strany dávají jiný součet",
-                    padx = 20, variable=self.choice, value=2, font=("Serif","10")).grid(row=3, columnspan=2, sticky=W)
-        Radiobutton(self.form, text="Tohle není žádná krychle ale jen náhodný shluk čtverečků!",
-                    padx = 20, variable=self.choice, value=3, font=("Serif","10")).grid(row=4, columnspan=2, sticky=W)
+        self.ch = []
+        tdesc = ["Je to síť krychle a všechny protilehlé strany dávají součet 7",
+                 "Je to síť krychle ale některé protilehlé strany dávají jiný součet",
+                 "Tohle není žádná krychle ale jen náhodný shluk čtverečků!"
+                 ]
+        b = Button(self.form, text=tdesc[0], command=lambda: self.handle_buttons(0))
+        b.grid(row=2, columnspan=2,  sticky=W)
+        self.ch.append(b)
+        b = Button(self.form, text=tdesc[1], command=lambda: self.handle_buttons(1))
+        b.grid(row=3, columnspan=2,  sticky=W)
+        self.ch.append(b)
+        b = Button(self.form, text=tdesc[2], command=lambda: self.handle_buttons(2))
+        b.grid(row=4, columnspan=2,  sticky=W)
+        self.ch.append(b)
+
+    def handle_buttons(self, ch):
+        print("choice = {c}, category = {k}".format(c=ch+1, k=self.parent.category))
+        if (ch+1) == self.parent.category:
+            self.parent.info.add_ra()
+        else:
+            self.parent.info.add_wa()
+        self.parent.get_question()
+
+    def on_off_buttons(self,on=True):
+        for i in range(3):
+            if on:
+                self.ch[i]['state']='normal'
+            else:
+                self.ch[i]['state']=DISABLED
 
 
 
@@ -60,12 +82,12 @@ class PanelInfo:
         self.canvas.coords(self.time_bar[1],50, 3*300/4,self.time_bar[0]+50,3*200/2+30)
         print("cas {t}".format(t=self.time_bar[0]))
         if self.time_bar[0] > 0:
-            self.canvas.after(100, self.update_time_bar)
+            self.canvas.after(2000, self.update_time_bar)
         else:
             self.canvas.create_text(50,30, text="Konec testu!")
             self.main_cl.n_attempt['state'] = 'normal'
-            self.main_cl.next_button['state'] = DISABLED
-            GeometrieTest.communication.add_data("krychle", self.n_right_answer[0]*pow(0.5,self.n_wrong_answer[0]))
+            self.main_cl.dialog.on_off_buttons(False)
+            GeometrieTest.communication.add_data("krychle", 100*self.n_right_answer[0]*pow(0.3,self.n_wrong_answer[0]))
 
 
     def update_text(self, txt):
@@ -153,17 +175,14 @@ class ShowNet:
 
 class GeometrieTest:
 
-
-
-
     def __init__(self, master):
 
         master.title("Testík")
         # redis
 
         login_data = Identity(master)
-        GeometrieTest.communication = login_data.redis
         master.wait_window(login_data.top)
+        GeometrieTest.communication = login_data.redis
         if not login_data.redis_ok or login_data.closed_window:
             sys.exit("Nefunkcni REDIS!")
 
@@ -178,9 +197,7 @@ class GeometrieTest:
         self.frameR = Frame(master)
         self.frameR.pack(padx=5, pady=10, side=LEFT)
         self.info = PanelInfo(self.frameR, self)
-        self.dialog = ShowDialog(self.frameR)
-        self.next_button = Button(self.frameR, text="Další", font=("Serif", "10"), command=self.click_next)
-        self.next_button.grid(row=5, column=0, pady=20)
+        self.dialog = ShowDialog(self)
         self.n_attempt = Button(self.frameR, text="Další pokus?", fg="red",
                                 state=DISABLED, font=("Serif", "10"), command=self.get_new_attempt)
         self.n_attempt.grid(row=5, column=1, pady=20)
@@ -200,19 +217,10 @@ class GeometrieTest:
         self.category = random.randint(1, 3)
         self.sh.create_problem(self.category)
 
-    def click_next(self):
-        #self.dialog.create_dialog(category)
-        print("choice = {c}, category = {k}".format(c=self.dialog.choice.get(), k=self.category))
-        if self.dialog.choice.get() == self.category:
-            self.info.add_ra()
-        else:
-            self.info.add_wa()
-        self.get_question()
-
     def get_new_attempt(self):
         if hasattr(self, 'n_attempt') and  self.n_attempt['state'] != DISABLED:
-            self.n_attempt['state']=DISABLED
-            self.next_button['state']='normal'
+            self.dialog.on_off_buttons(True)
+            self.n_attempt['state'] = DISABLED
             self.info = PanelInfo(self.frameR, self)
             self.get_question()
 

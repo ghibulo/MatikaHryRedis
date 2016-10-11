@@ -136,11 +136,7 @@ def vyhodnot():
     infoBody.append(c.create_text(490,10,text=str(b),fill="green"))
     body+=b
     c.itemconfig(aktivniCislo,text="0",fill="red")
-<<<<<<< HEAD
     redis.add_data("matematico", body)
-=======
-    #ODESLAT BODY body
->>>>>>> ed0cb99bde3cfb80be9fff27e75543e3b6ed074f
     naboduj(0)
     
     
