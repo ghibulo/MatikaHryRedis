@@ -4,11 +4,20 @@ import json
 from tkinter import *
 
 
-exp_time = 60*60
+class Gl:
+    exp_time = 60*60
+    indRed = 'b307'
+    redis_parameters = {'local': ('localhost', None),
+                        'skola': ('192.168.4.141', 'linux'),
+                        'b307': ('192.168.3.137', 'linux')}
+    @staticmethod
+    def getRedisLog(key=indRed):
+        pas = Gl.redis_parameters[key][1] 
+        if pas is None:
+            return StrictRedis(host=Gl.redis_parameters[key][0], port=6379)
+        else:
+            return StrictRedis(host=Gl.redis_parameters[key][0], port=6379, password=pas)
 
-indRed = 'skola'
-redis_parameters = {'local': ('localhost', None),
-                    'skola': ('192.168.4.141', 'linux')}
 
 #redis = StrictRedis(host='192.168.4.141',  port=6379, password='linux', db=0)
 
@@ -20,7 +29,7 @@ redis_parameters = {'local': ('localhost', None),
 
 class RedisClient:
     def __init__(self, ahost, apassw, aport=6379):
-        self.client_key = json.dumps(socket.gethostbyname(socket.gethostname()))
+        self.client_key = json.dumps(socket.gethostbyname(socket.gethostname()))+json.dumps(socket.gethostname())
         self.client_values = ""
         if apassw is None:
             self.redis = StrictRedis(host=ahost,  port=aport,  db=0)
@@ -50,7 +59,7 @@ class RedisClient:
         my_values = self.redis.get(self.client_key)
         self.client_values = {} if my_values is None else json.loads(my_values.decode('utf-8'))
         self.client_values[akey] = aval
-        self.redis.setex(self.client_key, exp_time, json.dumps(self.client_values))
+        self.redis.setex(self.client_key, Gl.exp_time, json.dumps(self.client_values))
 
 
     def get_data(self, akey):
@@ -91,10 +100,11 @@ class Identity:
         # get redis
         self.redis_ok = True
         try:
-            global redis_parameters
-            self.redis = RedisClient(*redis_parameters[indRed])
+            self.redis = RedisClient(Gl.redis_parameters[Gl.indRed][0], Gl.redis_parameters[Gl.indRed][1])
         except:
             self.redis_ok = False
+
+        print("1: "+str(self.redis_ok))
 
 
         # hide main window
@@ -119,6 +129,8 @@ class Identity:
                     self.EntryN.insert(END, self.name)
         except:
             self.redis_ok = False
+
+        print("2: "+str(self.redis_ok))
         self.EntryN.pack()
         self.myLabel = Label(wind, text='Přijímení:')
         self.myLabel.pack()
@@ -134,10 +146,21 @@ class Identity:
         self.surname = self.EntryS.get()
         try:
             self.redis.add_myself()
+        except:
+            self.redis_ok = False
+
+        print("3: "+str(self.redis_ok))
+        try:
             self.redis.send_data("jmeno", [self.name, self.surname])
+        except:
+            self.redis_ok = False
+
+        print("4: "+str(self.redis_ok))
+        try:
             self.redis.send_data("hostname", socket.gethostname())
         except:
             self.redis_ok = False
+        print("5: "+str(self.redis_ok))
         self.closed_window = False
         self.top.destroy()
         # unhide parent again
@@ -145,12 +168,6 @@ class Identity:
 
 
 
-
-#rc = RedisClient('192.168.4.141', 'linux', 6379 )
-if __name__ == "__main__":
-    rc = RedisClient('localhost', None, 6379)
-    rc.add_myself()
-    rc.send_data("skore", 50)
 
 
 

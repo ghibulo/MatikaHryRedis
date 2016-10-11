@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+
 from tkinter import Tk, Canvas
 from random import randint
 from json import loads
