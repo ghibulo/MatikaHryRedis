@@ -136,6 +136,7 @@ def vyhodnot():
     body+=b
     c.itemconfig(aktivniCislo,text="0",fill="red")
     redis.add_data("matematico", body)
+    #ODESLAT BODY body
     naboduj(0)
     
     
@@ -187,7 +188,10 @@ def novaHra():
     c.itemconfig(aktivniCislo,text=str(cislo))
     c.itemconfig(aktivniCislo,fill="black")
     c.after(100,upravCaru)
-    
+
+
+#Přihlásit se
+
 
 o = Tk()
 login_data = Identity(o)
