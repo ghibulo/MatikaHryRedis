@@ -29,17 +29,16 @@ class ShowDialog:
                  "Tohle není žádná krychle ale jen náhodný shluk čtverečků!"
                  ]
         b = Button(self.form, text=tdesc[0], command=lambda: self.handle_buttons(0))
-        b.grid(row=2, columnspan=2,  sticky=W)
+        b.grid(row=2, columnspan=2,  sticky=W+E)
         self.ch.append(b)
         b = Button(self.form, text=tdesc[1], command=lambda: self.handle_buttons(1))
-        b.grid(row=3, columnspan=2,  sticky=W)
+        b.grid(row=3, columnspan=2,  sticky=W+E)
         self.ch.append(b)
         b = Button(self.form, text=tdesc[2], command=lambda: self.handle_buttons(2))
-        b.grid(row=4, columnspan=2,  sticky=W)
+        b.grid(row=4, columnspan=2,  sticky=W+E)
         self.ch.append(b)
 
     def handle_buttons(self, ch):
-        print("choice = {c}, category = {k}".format(c=ch+1, k=self.parent.category))
         if (ch+1) == self.parent.category:
             self.parent.info.add_ra()
         else:
@@ -67,27 +66,26 @@ class PanelInfo:
         self.canvas = Canvas(root_form, width=300, height=h)
         self.canvas.grid(row=0, columnspan=2, sticky=W+E+N, pady=40)
         self.n_right_answer = [0, "Správných odpovědí: {n}",
-                               self.canvas.create_text(300 / 2, h / 4, text="")]
+                               self.canvas.create_text(300 / 2, h / 4, text="", font=("Serif", "18"))]
         self.update_text(self.n_right_answer)
         self.n_wrong_answer = [0, "Chybných odpovědí: {n}",
-                               self.canvas.create_text(300 / 2, 2*h / 4, text="")]
+                               self.canvas.create_text(300 / 2, 2*h / 4, text="", font=("Serif", "18"))]
         self.update_text(self.n_wrong_answer)
         self.time_bar = [200]
-        self.time_bar.append(self.canvas.create_rectangle(50, 3*h/4,self.time_bar[0]+50,3*200/2+30,fill="black"))
+        self.time_bar.append(self.canvas.create_rectangle(50, 3*h/4, self.time_bar[0]+50, 3*200/2+30, fill="black"))
         self.canvas.after(100, self.update_time_bar)
 
 
     def update_time_bar(self):
         self.time_bar[0] -= 2
         self.canvas.coords(self.time_bar[1],50, 3*300/4,self.time_bar[0]+50,3*200/2+30)
-        print("cas {t}".format(t=self.time_bar[0]))
         if self.time_bar[0] > 0:
             self.canvas.after(2000, self.update_time_bar)
         else:
-            self.canvas.create_text(50,30, text="Konec testu!")
+            self.canvas.create_text(100, 30, text="Konec testu!", fill="red", font=("Serif", "15"))
             self.main_cl.n_attempt['state'] = 'normal'
             self.main_cl.dialog.on_off_buttons(False)
-            GeometrieTest.communication.add_data("krychle", 100*self.n_right_answer[0]*pow(0.3,self.n_wrong_answer[0]))
+            GeometrieTest.communication.add_data("krychle", 100*self.n_right_answer[0]*pow(0.3, self.n_wrong_answer[0]))
 
 
     def update_text(self, txt):
@@ -149,7 +147,7 @@ class ShowNet:
         if not right:
             while True:
                 x,y = random.randint(1, 6),  random.randint(1, 6)
-                if (x+y)!=7:
+                if (x+y) != 7 and x != y:
                     res[x], res[y] = res[y], res[x]
                     break
         return res
@@ -167,6 +165,7 @@ class ShowNet:
             problem = {self.net_bad[0][q][i]:perm[i+1] for i in range(6)}
         else:
             q = random.randrange(1, self.net_good[1])
+            #q=13
             perm = self._create_perm(correct_answer == 1)
             problem = {x: perm[self.net_good[0][q][x]] for x in self.net_good[0][q]}
         self.show(problem)
@@ -186,9 +185,6 @@ class GeometrieTest:
         if not login_data.redis_ok or login_data.closed_window:
             sys.exit("Nefunkcni REDIS!")
 
-        # kontrolni tisk
-        print('Name: ', login_data.name)
-        print('Surname: ', login_data.surname)
         self.name = (login_data.name, login_data.surname)
 
         # tkinter

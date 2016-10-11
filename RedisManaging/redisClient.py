@@ -6,7 +6,7 @@ from tkinter import *
 
 class Gl:
     exp_time = 60*60
-    indRed = 'b307'
+    indRed = 'local'
     redis_parameters = {'local': ('localhost', None),
                         'skola': ('192.168.4.141', 'linux'),
                         'b307': ('192.168.3.137', 'linux')}
@@ -104,9 +104,6 @@ class Identity:
         except:
             self.redis_ok = False
 
-        print("1: "+str(self.redis_ok))
-
-
         # hide main window
         self.parent = parent
         parent.withdraw()
@@ -130,7 +127,6 @@ class Identity:
         except:
             self.redis_ok = False
 
-        print("2: "+str(self.redis_ok))
         self.EntryN.pack()
         self.myLabel = Label(wind, text='Přijímení:')
         self.myLabel.pack()
@@ -146,21 +142,10 @@ class Identity:
         self.surname = self.EntryS.get()
         try:
             self.redis.add_myself()
-        except:
-            self.redis_ok = False
-
-        print("3: "+str(self.redis_ok))
-        try:
             self.redis.send_data("jmeno", [self.name, self.surname])
-        except:
-            self.redis_ok = False
-
-        print("4: "+str(self.redis_ok))
-        try:
             self.redis.send_data("hostname", socket.gethostname())
         except:
             self.redis_ok = False
-        print("5: "+str(self.redis_ok))
         self.closed_window = False
         self.top.destroy()
         # unhide parent again
